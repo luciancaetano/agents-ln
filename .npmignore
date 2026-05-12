@@ -1,0 +1,10 @@
+src/
+test/
+node_modules/
+.claude/
+.gitignore
+eslint.config.js
+tsconfig.json
+vitest.config.ts
+package-lock.json
+*.tsbuildinfo
