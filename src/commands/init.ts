@@ -35,22 +35,21 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
     p.intro('agents-ln init')
 
     const providers = getProviders()
-    const grouped = groupByFilename(providers)
+    const home = await import('node:os').then((os) => os.homedir())
 
     const detected = new Set<string>()
-    for (const p of providers) {
-      const home = await import('node:os').then((os) => os.homedir())
-      for (const dp of p.detectPaths ?? []) {
+    for (const prov of providers) {
+      for (const dp of prov.detectPaths ?? []) {
         try {
           const resolved = dp.startsWith('~/') ? path.join(home, dp.slice(2)) : dp
           await fs.access(resolved)
-          detected.add(p.id)
+          detected.add(prov.id)
           break
         } catch {
         }
       }
-      if (!detected.has(p.id)) {
-        for (const cmd of p.detectCommands ?? []) {
+      if (!detected.has(prov.id)) {
+        for (const cmd of prov.detectCommands ?? []) {
           try {
             const found = await import('child_process').then((cp) =>
               new Promise<boolean>((resolve) => {
@@ -60,7 +59,7 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
               }),
             )
             if (found) {
-              detected.add(p.id)
+              detected.add(prov.id)
               break
             }
           } catch {
@@ -69,10 +68,10 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
       }
     }
 
-    const choices = grouped.map((g) => ({
-      value: g.filename,
-      label: `${g.displayName}  ${pc.dim('→ ' + g.filename)}`,
-      hint: g.ids.some((id) => detected.has(id)) ? 'detected' : undefined,
+    const choices = providers.map((prov) => ({
+      value: prov.id,
+      label: `${prov.displayName}  ${pc.dim('→ ' + prov.repoFileName)}`,
+      hint: detected.has(prov.id) ? 'detected' : undefined,
     }))
 
     const selected = await p.multiselect({
@@ -88,7 +87,11 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
       process.exit(0)
     }
 
-    const links = (selected).filter((f) => f !== source)
+    // Resolve agent ids → filenames, deduplicating shared filenames (e.g. AGENTS.md)
+    const seen = new Set<string>()
+    const links = (selected as string[])
+      .map((id) => providers.find((prov) => prov.id === id)?.repoFileName ?? id)
+      .filter((f) => f !== source && !seen.has(f) && seen.add(f))
 
     if (links.length === 0) {
       logger.warning('No agents selected — nothing to configure')
@@ -185,23 +188,3 @@ async function ensureCanonicalStructure(cwd: string, source: string): Promise<vo
   }
 }
 
-function groupByFilename(providers: ReturnType<typeof getProviders>) {
-  const map = new Map<string, { ids: string[]; displayNames: string[] }>()
-  const order: string[] = []
-
-  for (const p of providers) {
-    const existing = map.get(p.repoFileName)
-    if (existing) {
-      existing.ids.push(p.id)
-      existing.displayNames.push(p.displayName)
-    } else {
-      map.set(p.repoFileName, { ids: [p.id], displayNames: [p.displayName] })
-      order.push(p.repoFileName)
-    }
-  }
-
-  return order.map((f) => {
-    const entry = map.get(f)!
-    return { filename: f, ids: entry.ids, displayName: entry.displayNames.join(' / ') }
-  })
-}
