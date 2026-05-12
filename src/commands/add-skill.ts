@@ -57,7 +57,7 @@ export async function runAddSkill(url: string, skillName: string): Promise<void>
 
     logger.ok(`Skill '${skillName}' installed from ${url}`)
   } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
+    await fs.rm(tmpDir, { recursive: true, force: true }).catch((_e: unknown) => undefined)
   }
 }
 
