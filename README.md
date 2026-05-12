@@ -21,7 +21,7 @@ Claude Code reads `CLAUDE.md`. Cursor reads `.cursorrules`. Gemini CLI wants `GE
 npm install -g agents-ln
 ```
 
-Requires Node.js ≥ 18.
+Requires Node.js ≥ 18. Both `agents-ln` and `aln` are available as commands after install.
 
 > **What it touches:** symlinks in your project root + `~/.config/agents-ln/config.yaml` on first run. No network calls, no hooks, no daemons.  
 > **Undo:** `agents-ln clean` removes all managed symlinks. `npm uninstall -g agents-ln` removes the tool.
