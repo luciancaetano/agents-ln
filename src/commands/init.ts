@@ -89,7 +89,7 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
 
     // Resolve agent ids → filenames, deduplicating shared filenames (e.g. AGENTS.md)
     const seen = new Set<string>()
-    const links = (selected as string[])
+    const links = selected
       .map((id) => providers.find((prov) => prov.id === id)?.repoFileName ?? id)
       .filter((f) => f !== source && !seen.has(f) && seen.add(f))
 
