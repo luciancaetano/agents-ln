@@ -1,13 +1,14 @@
 <div align="center">
 
-# agents-ln
+# agents-ln, poliagent instruction unifier
 
-### Every AI coding agent reads a different file. Edit one, your others go stale.
+### Use Claude Code, Cursor, Copilot, and Gemini on the same project — with one instruction file.
 
 [![npm version](https://img.shields.io/npm/v/agents-ln.svg)](https://www.npmjs.com/package/agents-ln)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Providers](https://img.shields.io/badge/providers-9-blue)](https://github.com/luciancaetano/agents-ln#supported-providers)
 
-[Install](#install) · [Quick Start](#quick-start) · [Commands](#commands) · [Providers](#supported-providers) · [Config](#configuration)
+[Install](#install) · [Quick Start](#quick-start) · [Polyagent Workflow](#polyagent-workflow) · [Commands](#commands) · [Providers](#supported-providers) · [Config](#configuration)
 
 </div>
 
@@ -32,9 +33,13 @@ Requires Node.js >= 18.
 
 ## The Problem
 
-Claude Code expects `CLAUDE.md`. Cursor expects `.cursorrules`. Gemini CLI expects `GEMINI.md`. GitHub Copilot expects `.github/copilot-instructions.md`.
+AI coding agents don't agree on where to read instructions.
 
-If you use more than one, you're either copy-pasting or letting them drift.
+Claude Code expects `CLAUDE.md`. Cursor reads `.cursorrules`. Gemini CLI wants `GEMINI.md`. Copilot expects `.github/copilot-instructions.md`. Codex CLI reads `AGENTS.md`.
+
+If you use only one agent, that's manageable. But the real productivity gain comes from running several at once — Claude for architecture and review, Cursor for editor-integrated edits, Copilot for autocomplete, Gemini for terminal tasks — and keeping all of them on the same page.
+
+Without a single source of truth, you end up copy-pasting instructions across files, or each agent is working from a different (and increasingly stale) context.
 
 `agents-ln` solves this with the oldest UNIX trick: one canonical file, symlinks for the rest.
 
@@ -56,7 +61,42 @@ $ agents-ln sync
 → created  .github/copilot-instructions.md    → ../_AGENTS.md
 ```
 
-Edit `_AGENTS.md`. Every tool sees the same content — no copies, no drift.
+Open Claude Code, Cursor, and Copilot side by side — they're all reading `_AGENTS.md`. Edit once, every agent picks it up.
+
+---
+
+## Polyagent Workflow
+
+The real use case: you're not picking one agent. You're running several at once, each doing what it does best.
+
+```
+_AGENTS.md                 ← edit this once
+    │
+    ├──► Claude Code        CLAUDE.md
+    ├──► Cursor             .cursorrules
+    ├──► GitHub Copilot     .github/copilot-instructions.md
+    ├──► Gemini CLI         GEMINI.md
+    ├──► Codex CLI          AGENTS.md
+    ├──► OpenCode           AGENTS.md
+    ├──► Windsurf           .windsurfrules
+    ├──► Aider              CONVENTIONS.md
+    └──► Hermes             AGENTS.md
+```
+
+Update your project context in one place. Every agent picks it up automatically — no copies, no drift, no "which file has the latest version?" problem.
+
+**Shared config directories** go further. Add a `_agents/` directory to your project and `sync` also links each agent's config dir (`.claude/`, `.cursor/`, `.gemini/`, etc.) to it — so skills, snippets, and per-provider config are shared across agents too.
+
+```
+_repo/
+├── _agents/            ← one shared config directory
+│   ├── skills/
+│   └── agents/
+├── .claude ───────────→ ./_agents/
+├── .cursor ───────────→ ./_agents/
+├── .opencode ─────────→ ./_agents/
+└── .gemini ───────────→ ./_agents/
+```
 
 ---
 
@@ -66,7 +106,7 @@ Edit `_AGENTS.md`. Every tool sees the same content — no copies, no drift.
 # 1. Create your canonical instruction file
 echo "# Project instructions for AI agents" > _AGENTS.md
 
-# 2. Initialize config
+# 2. Initialize config (pick which agents to link)
 agents-ln init
 
 # 3. Create symlinks
@@ -82,6 +122,8 @@ agents-ln check
 ---
 
 ## Supported Providers
+
+9 agents. One source of truth.
 
 | Provider | Instruction File | Config Dir |
 |----------|-----------------|------------|
@@ -103,7 +145,7 @@ Add any custom path by editing the `links` array in `.agents-ln.yaml`.
 
 ### `agents-ln init`
 
-Create a project-level `.agents-ln.yaml` config file.
+Create a project-level `.agents-ln.yaml` config file. Prompts for which agents to enable.
 
 ```bash
 agents-ln init
@@ -117,7 +159,7 @@ Warns if no `.git` directory is detected.
 
 ### `agents-ln sync`
 
-The core command. Reads config, validates the source file, and creates or fixes symlinks for every link target.
+Reads config, validates the source file, and creates or fixes symlinks for every configured agent.
 
 ```bash
 agents-ln sync
@@ -242,25 +284,6 @@ _repo/
 ```
 
 All symlinks are **relative** — portable across machines, contributors, and CI.
-
-<details>
-<summary><b>Directory linking with <code>_agents/</code></b></summary>
-
-When `_agents/` exists in your project, `sync` also creates directory symlinks for each provider's config dir:
-
-```
-_repo/
-├── _agents/            ← shared agent config directory
-│   ├── skills/
-│   └── agents/
-├── .claude ───────────→ ./_agents/
-├── .opencode ─────────→ ./_agents/
-└── .gemini ───────────→ ./_agents/
-```
-
-If a provider config dir already exists as a real directory, its contents are migrated into `_agents/` non-destructively (no overwrites), the original is removed, and the symlink is created.
-
-</details>
 
 <details>
 <summary><b>Architecture</b></summary>

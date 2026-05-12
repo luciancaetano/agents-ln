@@ -1,6 +1,6 @@
 {
   "name": "agents-ln",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Unify, normalize, and synchronize AI coding agent instruction files using symbolic links",
   "type": "module",
   "bin": {
