@@ -10,6 +10,7 @@ import { runClean } from './commands/clean.js'
 import { runDoctor } from './commands/doctor.js'
 import { runAddSkill } from './commands/add-skill.js'
 import { runRemoveSkill } from './commands/remove-skill.js'
+import { runListSkills } from './commands/list-skills.js'
 import type { CliOptions } from './types.js'
 
 const pkg = { version: '0.2.5', description: 'Unify AI coding agent instruction files using symbolic links' }
@@ -24,7 +25,7 @@ function showMascot() {
   console.log(pc.cyan('  └─┬───┬─┘'))
   console.log(pc.cyan('    ╨   ╨  '))
   console.log('')
-  console.log(pc.dim('  Commands: ') + ['init', 'sync', 'check', 'clean', 'doctor', 'add skill', 'remove skill'].map(c => pc.bold(c)).join(pc.dim(' · ')))
+  console.log(pc.dim('  Commands: ') + ['init', 'sync', 'check', 'clean', 'doctor', 'add skill', 'remove skill', 'list skills'].map(c => pc.bold(c)).join(pc.dim(' · ')))
   console.log(pc.dim("  Run 'agents-ln <command> --help' for usage."))
   console.log('')
 }
@@ -115,6 +116,18 @@ removeCmd
   .description('Remove a skill from _agents/skills/ and unregister it from config')
   .action(async (skillName: string) => {
     await runRemoveSkill(skillName)
+  })
+
+// list
+const listCmd = program
+  .command('list')
+  .description('List resources in the project')
+
+listCmd
+  .command('skills')
+  .description('Show all installed skills and their status')
+  .action(async () => {
+    await runListSkills()
   })
 
 if (process.argv.length <= 2) {
