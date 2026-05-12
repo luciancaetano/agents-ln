@@ -7,7 +7,3 @@ dirs:
   - .codex
   - .hermes
   - .opencode
-skills:
-  readme:
-    name: readme
-    source: https://github.com/boshu2/agentops

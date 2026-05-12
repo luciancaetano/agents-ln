@@ -78,6 +78,7 @@ Custom paths: add any file to the `links` array in `.agents-ln.yaml`.
 | `agents-ln clean` | Remove managed symlinks (never deletes `_AGENTS.md`) |
 | `agents-ln doctor` | Diagnose environment, config, and provider detection |
 | `agents-ln add skill <url> <name>` | Install a skill from a GitHub repo into `_agents/skills/` |
+| `agents-ln remove skill <name>` | Remove a skill from `_agents/skills/` and unregister it from config |
 
 Common flags for `sync`: `--dry-run`, `--force`, `--backup`, `--quiet`, `--verbose`.
 
