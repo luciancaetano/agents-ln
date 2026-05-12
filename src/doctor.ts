@@ -33,7 +33,7 @@ export async function runDoctor(): Promise<DoctorResult[]> {
   results.push(...await testSymlinkSupport())
 
   // PATH check
-  results.push(...await checkPath())
+  results.push(...checkPath())
 
   // Config dirs
   results.push(...await checkConfigDirs())
