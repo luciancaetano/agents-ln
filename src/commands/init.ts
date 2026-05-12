@@ -186,18 +186,22 @@ async function ensureCanonicalStructure(cwd: string, source: string): Promise<vo
 }
 
 function groupByFilename(providers: ReturnType<typeof getProviders>) {
-  const map = new Map<string, { ids: string[]; displayName: string }>()
+  const map = new Map<string, { ids: string[]; displayNames: string[] }>()
   const order: string[] = []
 
   for (const p of providers) {
     const existing = map.get(p.repoFileName)
     if (existing) {
       existing.ids.push(p.id)
+      existing.displayNames.push(p.displayName)
     } else {
-      map.set(p.repoFileName, { ids: [p.id], displayName: p.displayName })
+      map.set(p.repoFileName, { ids: [p.id], displayNames: [p.displayName] })
       order.push(p.repoFileName)
     }
   }
 
-  return order.map((f) => ({ filename: f, ...map.get(f)! }))
+  return order.map((f) => {
+    const entry = map.get(f)!
+    return { filename: f, ids: entry.ids, displayName: entry.displayNames.join(' / ') }
+  })
 }
