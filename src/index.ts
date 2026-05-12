@@ -12,7 +12,7 @@ import { runAddSkill } from './commands/add-skill.js'
 import { runRemoveSkill } from './commands/remove-skill.js'
 import type { CliOptions } from './types.js'
 
-const pkg = { version: '0.1.4', description: 'Unify AI coding agent instruction files using symbolic links' }
+const pkg = { version: '0.2.5', description: 'Unify AI coding agent instruction files using symbolic links' }
 
 function showMascot() {
   const v = pc.dim(`v${pkg.version}`)
