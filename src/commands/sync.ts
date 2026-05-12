@@ -45,6 +45,19 @@ export async function runSync(opts: CliOptions = {}): Promise<void> {
 
     for (const dir of configDirs) {
       const linkPath = path.resolve(projectConfig.configDir, dir)
+
+      // Skip real directories — replacing them is destructive and almost certainly wrong
+      try {
+        const st = await fs.lstat(linkPath)
+        if (st.isDirectory()) {
+          logger.warning(`skip ${dir} — real directory exists (remove it manually to enable directory linking)`)
+          results.push({ linkPath, status: 'NOT_SYMLINK', action: 'skip' })
+          continue
+        }
+      } catch {
+        // doesn't exist — fall through to fixLink
+      }
+
       const result = await fixLink(linkPath, dirSource, opts)
       results.push(result)
 

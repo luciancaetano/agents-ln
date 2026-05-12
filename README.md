@@ -15,7 +15,7 @@ Every AI coding tool expects a different file at the project root:
 | Tool | File |
 |------|------|
 | Claude Code | `CLAUDE.md` |
-| Codex CLI / OpenCode | `AGENTS.md` |
+| Codex CLI / OpenCode / Hermes Agent | `AGENTS.md` |
 | Gemini CLI | `GEMINI.md` |
 | Cursor | `.cursorrules` |
 | Windsurf | `.windsurfrules` |
