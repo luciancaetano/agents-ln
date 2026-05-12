@@ -38,7 +38,7 @@ export async function runSync(opts: CliOptions = {}): Promise<void> {
 
   const dirSource = path.resolve(projectConfig.configDir, '_agents')
   const rawLinks = projectConfig.config.links
-  const configDirs = getConfigDirsForFilenames(rawLinks)
+  const configDirs = projectConfig.config.dirs ?? getConfigDirsForFilenames(rawLinks)
 
   if (configDirs.length > 0 && (await exists(dirSource))) {
     logger.info(`Directory links (${configDirs.length}):`)

@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Providers](https://img.shields.io/badge/providers-9-blue)](https://github.com/luciancaetano/agents-ln#supported-providers)
 
-[Install](#install) · [Quick Start](#quick-start) · [Polyagent Workflow](#polyagent-workflow) · [Commands](#commands) · [Providers](#supported-providers) · [Config](#configuration)
+[Install](#install) · [Quick Start](#quick-start) · [Polyagent Workflow](#polyagent-workflow) · [Commands](#commands) · [Add Skill](#agents-ln-add-skill-url-skillname) · [Providers](#supported-providers) · [Config](#configuration)
 
 </div>
 
@@ -214,6 +214,31 @@ Skips symlinks pointing to a different source, regular files, and missing paths 
 
 ---
 
+### `agents-ln add skill <url> <skillName>`
+
+Install a skill from a remote GitHub repository into `_agents/skills/`.
+
+```bash
+agents-ln add skill https://github.com/user/repo my-skill
+```
+
+The command:
+1. Clones the repository (shallow, `--depth 1`)
+2. Copies `skills/<skillName>/` from the repo into `_agents/skills/<skillName>/`
+3. Records the installed skill and its source in `.agents-ln.yaml`
+
+The remote repository must have this layout:
+
+```
+repo/
+└── skills/
+    └── my-skill/      ← copied to _agents/skills/my-skill/
+        ├── SKILL.md
+        └── ...
+```
+
+---
+
 ### `agents-ln doctor`
 
 Run environment diagnostics: OS, symlink capability, PATH, config validity, source file, detected providers.
@@ -240,6 +265,12 @@ links:
   - .windsurfrules
   - .github/copilot-instructions.md
   - CONVENTIONS.md
+
+# populated automatically by `agents-ln add skill`
+skills:
+  my-skill:
+    name: my-skill
+    source: https://github.com/user/repo
 ```
 
 ### Global Config (`~/.config/agents-ln/config.yaml`)

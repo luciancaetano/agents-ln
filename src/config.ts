@@ -11,7 +11,9 @@ import type { AgentsLnConfig, ProjectConfig } from './types.js'
 const ConfigSchema = z.object({
   source: z.string().min(1, 'source must not be empty'),
   links: z.array(z.string().min(1)).min(1, 'links must not be empty'),
+  dirs: z.array(z.string().min(1)).optional(),
   providers: z.record(z.object({ enabled: z.boolean() })).optional(),
+  skills: z.record(z.object({ name: z.string(), source: z.string() })).optional(),
 })
 
 export const CONFIG_FILENAME = '.agents-ln.yaml'
@@ -122,12 +124,15 @@ export async function writeProjectConfig(
     throw new Error(`${configPath} already exists (use --force to overwrite)`)
   }
 
-  const yaml = YAML.stringify({
+  const obj: Record<string, unknown> = {
     source: config.source,
     links: config.links,
-  })
+  }
+  if (config.dirs) {obj.dirs = config.dirs}
+  if (config.providers) {obj.providers = config.providers}
+  if (config.skills) {obj.skills = config.skills}
 
-  await fs.writeFile(configPath, yaml, 'utf-8')
+  await fs.writeFile(configPath, YAML.stringify(obj), 'utf-8')
   return configPath
 }
 

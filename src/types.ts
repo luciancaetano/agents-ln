@@ -39,10 +39,17 @@ export interface SyncSummary {
   removed: number
 }
 
+export interface SkillEntry {
+  name: string
+  source: string
+}
+
 export interface AgentsLnConfig {
   source: string
   links: string[]
+  dirs?: string[]
   providers?: Record<string, { enabled: boolean }>
+  skills?: Record<string, SkillEntry>
 }
 
 export interface ProjectConfig {

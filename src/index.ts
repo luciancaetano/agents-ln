@@ -8,6 +8,7 @@ import { runSync } from './commands/sync.js'
 import { runCheck } from './commands/check.js'
 import { runClean } from './commands/clean.js'
 import { runDoctor } from './commands/doctor.js'
+import { runAddSkill } from './commands/add-skill.js'
 import type { CliOptions } from './types.js'
 
 const pkg = { version: '0.1.4', description: 'Unify AI coding agent instruction files using symbolic links' }
@@ -21,7 +22,7 @@ function showMascot() {
   console.log(pc.cyan('   | | |  ') + '  ' + pc.dim('One instruction file. Every AI agent.'))
   console.log(pc.cyan('   ^   ^  '))
   console.log('')
-  console.log(pc.dim('  Commands: ') + ['init', 'sync', 'check', 'clean', 'doctor'].map(c => pc.bold(c)).join(pc.dim(' · ')))
+  console.log(pc.dim('  Commands: ') + ['init', 'sync', 'check', 'clean', 'doctor', 'add skill'].map(c => pc.bold(c)).join(pc.dim(' · ')))
   console.log(pc.dim("  Run 'agents-ln <command> --help' for usage."))
   console.log('')
 }
@@ -89,6 +90,18 @@ globalOpts(program
   .action(async () => {
     await runDoctor()
   }))
+
+// add
+const addCmd = program
+  .command('add')
+  .description('Add resources to the project')
+
+addCmd
+  .command('skill <url> <skillName>')
+  .description('Install a skill from a remote repository into _agents/skills/')
+  .action(async (url: string, skillName: string) => {
+    await runAddSkill(url, skillName)
+  })
 
 if (process.argv.length <= 2) {
   showMascot()

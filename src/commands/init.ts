@@ -88,17 +88,27 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
     }
 
     // Resolve agent ids → filenames, deduplicating shared filenames (e.g. AGENTS.md)
-    const seen = new Set<string>()
+    const seenLinks = new Set<string>()
     const links = selected
       .map((id) => providers.find((prov) => prov.id === id)?.repoFileName ?? id)
-      .filter((f) => f !== source && !seen.has(f) && seen.add(f))
+      .filter((f) => f !== source && !seenLinks.has(f) && seenLinks.add(f))
 
     if (links.length === 0) {
       logger.warning('No agents selected — nothing to configure')
       return
     }
 
-    const config: AgentsLnConfig = { source, links }
+    // Collect explicit configDirs for selected agents
+    const seenDirs = new Set<string>()
+    const dirs = selected
+      .map((id) => providers.find((prov) => prov.id === id)?.configDir)
+      .filter((d): d is string => {
+        if (!d || seenDirs.has(d)) {return false}
+        seenDirs.add(d)
+        return true
+      })
+
+    const config: AgentsLnConfig = { source, links, dirs }
 
     try {
       const configPath = await writeProjectConfig(cwd, config, false)
@@ -113,6 +123,16 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
     logger.info('')
     await runSync({ quiet: true })
   } else {
+    const allProviders = getProviders()
+    const seenDirs = new Set<string>()
+    const allDirs = allProviders
+      .map((p) => p.configDir)
+      .filter((d): d is string => {
+        if (!d || seenDirs.has(d)) {return false}
+        seenDirs.add(d)
+        return true
+      })
+
     const config: AgentsLnConfig = {
       source,
       links: [
@@ -124,6 +144,7 @@ export async function runInit(opts: InitOptions = {}): Promise<void> {
         '.github/copilot-instructions.md',
         'CONVENTIONS.md',
       ],
+      dirs: allDirs,
     }
 
     try {
