@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+import pc from 'picocolors'
 import { logger } from './logger.js'
 import { runInit } from './commands/init.js'
 import { runSync } from './commands/sync.js'
@@ -9,7 +10,21 @@ import { runClean } from './commands/clean.js'
 import { runDoctor } from './commands/doctor.js'
 import type { CliOptions } from './types.js'
 
-const pkg = { version: '0.1.0', description: 'Unify AI coding agent instruction files using symbolic links' }
+const pkg = { version: '0.1.4', description: 'Unify AI coding agent instruction files using symbolic links' }
+
+function showMascot() {
+  const v = pc.dim(`v${pkg.version}`)
+  console.log('')
+  console.log(pc.cyan('    ___  '))
+  console.log(pc.cyan('   (o.o) ') + `  agents-ln ${v}`)
+  console.log(pc.cyan('   /|=|\\  '))
+  console.log(pc.cyan('   | | |  ') + '  ' + pc.dim('One instruction file. Every AI agent.'))
+  console.log(pc.cyan('   ^   ^  '))
+  console.log('')
+  console.log(pc.dim('  Commands: ') + ['init', 'sync', 'check', 'clean', 'doctor'].map(c => pc.bold(c)).join(pc.dim(' · ')))
+  console.log(pc.dim("  Run 'agents-ln <command> --help' for usage."))
+  console.log('')
+}
 
 const program = new Command()
 
@@ -74,5 +89,10 @@ globalOpts(program
   .action(async () => {
     await runDoctor()
   }))
+
+if (process.argv.length <= 2) {
+  showMascot()
+  process.exit(0)
+}
 
 program.parse(process.argv)

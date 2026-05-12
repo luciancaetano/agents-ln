@@ -1,6 +1,6 @@
 {
   "name": "agents-ln",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Unify, normalize, and synchronize AI coding agent instruction files using symbolic links",
   "type": "module",
   "bin": {
@@ -38,6 +38,7 @@
     "cli"
   ],
   "license": "MIT",
+  "author": "Lucian Caetano",
   "repository": {
     "type": "git",
     "url": "https://github.com/luciancaetano/agents-ln"

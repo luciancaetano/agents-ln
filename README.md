@@ -1,30 +1,24 @@
+<div align="center">
+
 # agents-ln
 
-**Unify AI coding agent instructions across every tool — with symlinks.**
+### Every AI coding agent reads a different file. Edit one, your others go stale.
 
-`agents-ln` lets you maintain a **single canonical instruction file** (`_AGENTS.md`) and automatically creates provider-compatible symlinks for all your AI coding tools. Edit one file, every tool sees the same content.
+[![npm version](https://img.shields.io/npm/v/agents-ln.svg)](https://www.npmjs.com/package/agents-ln)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-No templates. No generators. No daemons. Just symlinks.
+[Install](#install) · [Quick Start](#quick-start) · [Commands](#commands) · [Providers](#supported-providers) · [Config](#configuration)
 
----
-
-## The Problem
-
-Every AI coding tool expects a different file at the project root:
-
-| Tool | File |
-|------|------|
-| Claude Code | `CLAUDE.md` |
-| Codex CLI / OpenCode / Hermes Agent | `AGENTS.md` |
-| Gemini CLI | `GEMINI.md` |
-| Cursor | `.cursorrules` |
-| Windsurf | `.windsurfrules` |
-| GitHub Copilot | `.github/copilot-instructions.md` |
-| Aider | `CONVENTIONS.md` |
-
-Without `agents-ln`, you maintain N copies. With `agents-ln`, you maintain one.
+</div>
 
 ---
+
+> [!IMPORTANT]
+> **What it touches:** Creates symlinks in your project root and, on first run, a global config at `~/.config/agents-ln/config.yaml`. No network calls. No shell hooks. No daemons.
+>
+> **Disable instantly:** `agents-ln clean` removes all managed symlinks. Your canonical `_AGENTS.md` is never deleted.
+>
+> **Uninstall:** `npm uninstall -g agents-ln` then `agents-ln clean` in any project that used it.
 
 ## Install
 
@@ -36,20 +30,72 @@ Requires Node.js >= 18.
 
 ---
 
+## The Problem
+
+Claude Code expects `CLAUDE.md`. Cursor expects `.cursorrules`. Gemini CLI expects `GEMINI.md`. GitHub Copilot expects `.github/copilot-instructions.md`.
+
+If you use more than one, you're either copy-pasting or letting them drift.
+
+`agents-ln` solves this with the oldest UNIX trick: one canonical file, symlinks for the rest.
+
+---
+
+## See It Work
+
+```
+$ agents-ln init
+✔ Wrote .agents-ln.yaml
+
+$ agents-ln sync
+→ created  CLAUDE.md                          → _AGENTS.md
+→ created  AGENTS.md                          → _AGENTS.md
+→ created  GEMINI.md                          → _AGENTS.md
+→ created  .cursorrules                       → _AGENTS.md
+→ created  .windsurfrules                     → _AGENTS.md
+→ created  CONVENTIONS.md                     → _AGENTS.md
+→ created  .github/copilot-instructions.md    → ../_AGENTS.md
+```
+
+Edit `_AGENTS.md`. Every tool sees the same content — no copies, no drift.
+
+---
+
 ## Quick Start
 
 ```bash
 # 1. Create your canonical instruction file
 echo "# Project instructions for AI agents" > _AGENTS.md
 
-# 2. Initialize project config
+# 2. Initialize config
 agents-ln init
 
-# 3. Create symlinks for all supported tools
+# 3. Create symlinks
 agents-ln sync
 ```
 
-That's it. Now `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`, `.windsurfrules`, `.github/copilot-instructions.md`, and `CONVENTIONS.md` all point to `_AGENTS.md`.
+Verify at any time:
+
+```bash
+agents-ln check
+```
+
+---
+
+## Supported Providers
+
+| Provider | Instruction File | Config Dir |
+|----------|-----------------|------------|
+| Claude Code | `CLAUDE.md` | `.claude/` |
+| Codex CLI | `AGENTS.md` | `.codex/` |
+| OpenCode | `AGENTS.md` | `.opencode/` |
+| Hermes Agent | `AGENTS.md` | `.hermes/` |
+| Gemini CLI | `GEMINI.md` | `.gemini/` |
+| Cursor | `.cursorrules` | `.cursor/` |
+| Windsurf | `.windsurfrules` | `.windsurf/` |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.github/` |
+| Aider | `CONVENTIONS.md` | `.aider/` |
+
+Add any custom path by editing the `links` array in `.agents-ln.yaml`.
 
 ---
 
@@ -71,7 +117,7 @@ Warns if no `.git` directory is detected.
 
 ### `agents-ln sync`
 
-The core command. Reads config, validates the source file, and creates/fixes symlinks for every link target.
+The core command. Reads config, validates the source file, and creates or fixes symlinks for every link target.
 
 ```bash
 agents-ln sync
@@ -82,7 +128,8 @@ agents-ln sync --quiet          # suppress info output
 agents-ln sync --verbose        # debug-level logging
 ```
 
-Safety guarantees:
+<details>
+<summary><b>Symlink state machine</b> — how sync handles each case</summary>
 
 | State | Default behavior |
 |-------|-----------------|
@@ -92,6 +139,8 @@ Safety guarantees:
 | Regular file in the way | Error with size + date — use `--force` or `--backup` |
 | Broken symlink | Remove and recreate |
 | Source is a symlink | Error — use `--force` to allow |
+
+</details>
 
 ---
 
@@ -103,7 +152,6 @@ Validate all configured symlinks. Exits non-zero if problems exist.
 agents-ln check
 ```
 
-Output:
 ```
 ✓ /repo/CLAUDE.md  ok
 ✗ /repo/GEMINI.md  symlink missing (run agents-ln sync)
@@ -120,31 +168,19 @@ agents-ln clean
 agents-ln clean --dry-run
 ```
 
-Skips:
-- Symlinks pointing to a different source (with a warning)
-- Regular files (with a warning)
-- Missing paths
+Skips symlinks pointing to a different source, regular files, and missing paths — all with warnings.
 
 ---
 
 ### `agents-ln doctor`
 
-Run comprehensive environment diagnostics.
+Run environment diagnostics: OS, symlink capability, PATH, config validity, source file, detected providers.
 
 ```bash
 agents-ln doctor
 ```
 
-Checks:
-- Operating system
-- Symlink creation and resolution
-- Binary location in PATH
-- Config directory existence and writability
-- Config file validity
-- Source file existence
-- Provider detection
-
-Outputs `✓`/`⚠`/`✗` indicators for each check.
+Outputs `✓` / `⚠` / `✗` for each check.
 
 ---
 
@@ -166,26 +202,27 @@ links:
 
 ### Global Config (`~/.config/agents-ln/config.yaml`)
 
-Same format. Project config always takes priority.
+Same format. Project config takes priority. Auto-created with defaults on first `agents-ln sync` if neither config exists.
 
-If neither exists, running `agents-ln sync` auto-creates a global config with defaults and prints onboarding instructions.
+<details>
+<summary><b>Config discovery and path resolution</b></summary>
 
-### Config Discovery Priority
+**Discovery priority:**
 
 ```
-project/.agents-ln.yaml        # 1. Check project root
-~/.config/agents-ln/config.yaml # 2. Fall back to global
-→ auto-create with defaults     # 3. Create global if neither exists
+project/.agents-ln.yaml           # 1. Project root
+~/.config/agents-ln/config.yaml   # 2. Global fallback
+→ auto-create with defaults        # 3. Created if neither exists
 ```
 
-### Path Resolution
+**Path resolution pipeline:**
 
-All paths in config follow this pipeline:
+1. `~` expanded to home directory
+2. Relative paths resolved against the config file's directory
+3. Paths normalized (duplicate separators, `..`, `.` removed)
+4. Symlink targets always written as relative paths
 
-1. `~` is expanded to the user's home directory
-2. Relative paths are resolved against the config file's directory
-3. Paths are normalized (duplicate separators, `..`, `.` removed)
-4. Symlink targets are always relative (never absolute)
+</details>
 
 ---
 
@@ -193,115 +230,84 @@ All paths in config follow this pipeline:
 
 ```
 _repo/
-├── _AGENTS.md              ← you edit this (canonical source)
-├── CLAUDE.md ─────────────→ symlink → ./_AGENTS.md
-├── AGENTS.md ─────────────→ symlink → ./_AGENTS.md
-├── GEMINI.md ─────────────→ symlink → ./_AGENTS.md
-├── .cursorrules ──────────→ symlink → ./_AGENTS.md
-├── .windsurfrules ────────→ symlink → ./_AGENTS.md
-├── CONVENTIONS.md ────────→ symlink → ./_AGENTS.md
+├── _AGENTS.md              ← you edit this
+├── CLAUDE.md ─────────────→ ./_AGENTS.md
+├── AGENTS.md ─────────────→ ./_AGENTS.md
+├── GEMINI.md ─────────────→ ./_AGENTS.md
+├── .cursorrules ──────────→ ./_AGENTS.md
+├── .windsurfrules ────────→ ./_AGENTS.md
+├── CONVENTIONS.md ────────→ ./_AGENTS.md
 └── .github/
-    └── copilot-instructions.md → symlink → ../_AGENTS.md
+    └── copilot-instructions.md → ../_AGENTS.md
 ```
 
-All symlinks are **relative** — the structure is portable across machines, team members, and CI environments.
+All symlinks are **relative** — portable across machines, contributors, and CI.
 
----
+<details>
+<summary><b>Directory linking with <code>_agents/</code></b></summary>
 
-## Canonical Directory Structure
-
-For projects that include agent skill files, config directories, or agent definitions:
+When `_agents/` exists in your project, `sync` also creates directory symlinks for each provider's config dir:
 
 ```
-_AGENTS.md              ← canonical instruction file
-_agents/
-  skills/               ← reusable skill definitions
-  agents/               ← agent-specific configurations
+_repo/
+├── _agents/            ← shared agent config directory
+│   ├── skills/
+│   └── agents/
+├── .claude ───────────→ ./_agents/
+├── .opencode ─────────→ ./_agents/
+└── .gemini ───────────→ ./_agents/
 ```
 
-`agents-ln` creates provider-specific symlinks that map each tool's expected paths to this structure.
+If a provider config dir already exists as a real directory, its contents are migrated into `_agents/` non-destructively (no overwrites), the original is removed, and the symlink is created.
 
----
+</details>
 
-## Supported Providers
+<details>
+<summary><b>Architecture</b></summary>
 
-| Provider | File | Config Dir | Skills | Agents |
-|----------|------|------------|--------|--------|
-| Claude Code | `CLAUDE.md` | `.claude/` | `.claude/skills/` | `.claude/agents/` |
-| Codex CLI | `AGENTS.md` | `.codex/` | `.codex/skills/` | `.codex/agents/` |
-| OpenCode | `AGENTS.md` | `.claude/` | `.claude/skills/` | `.claude/agents/` |
-| Gemini CLI | `GEMINI.md` | `.gemini/` | `.gemini/skills/` | `.gemini/agents/` |
-| Cursor | `.cursorrules` | `.cursor/` | `.cursor/rules/` | N/A |
-| Windsurf | `.windsurfrules` | `.windsurf/` | N/A | N/A |
-| GitHub Copilot | `.github/copilot-instructions.md` | `.github/` | N/A | N/A |
-| Aider | `CONVENTIONS.md` | `.aider/` | N/A | N/A |
+```
+src/
+├── agents_list.ts     Master list of all provider definitions
+├── providers.ts       Utility functions over agents_list
+├── config.ts          Config discovery, loading, Zod validation
+├── symlink.ts         Symlink state machine (MISSING/OK/WRONG/...)
+├── backup.ts          Safe file backup with timestamp fallback
+├── doctor.ts          Environment diagnostics runner
+├── diagnostics.ts     Individual diagnostic checks
+├── logger.ts          Structured output with quiet/verbose modes
+├── ui.ts              Interactive prompts (clack)
+├── commands/          One module per CLI command
+└── utils/             Cross-platform path + fs utilities
+```
 
-Add custom providers by editing `.agents-ln.yaml` directly — the `links` array accepts any path.
+To add a new provider, edit `src/agents_list.ts` — it's the only file that needs to change.
+
+</details>
 
 ---
 
 ## Safety
 
-`agents-ln` prioritizes safety above all else:
-
-- **Never overwrites files silently** — conflicting files trigger errors with size, modification date, and actionable guidance (`cat`, `--backup`, `--force`)
-- **All symlinks are relative** — absolute paths would break when repos are moved or shared
-- **Dry-run mode** everywhere — preview any command before making changes
-- **Backup mode** — conflicting files are renamed to `.bak` (with timestamp fallback if `.bak` already exists)
-- **Empty files** — removed with a warning, not backed up (they're almost certainly accidental)
-- **Clean only removes its own symlinks** — unrelated files and symlinks from other sources are left untouched
-- **Source is never deleted** — `agents-ln clean` only removes managed symlinks, never the canonical source file
+- **Never overwrites files silently** — conflicting files trigger errors with size, date, and actionable guidance
+- **All symlinks are relative** — absolute paths break when repos are moved or shared
+- **Dry-run everywhere** — preview any command before making changes
+- **Backup mode** — conflicting files renamed to `.bak` (timestamped fallback if `.bak` already exists)
+- **Empty files removed with warning** — not backed up
+- **`clean` only removes its own symlinks** — unrelated files and foreign symlinks untouched
+- **Source never deleted** — `clean` removes managed symlinks, never `_AGENTS.md`
 
 ---
 
 ## Development
 
 ```bash
-# Clone and install
-git clone <repo> && cd agents-ln
+git clone https://github.com/luciancaetano/agents-ln && cd agents-ln
 npm install
 
-# Run in development
-npm run dev -- sync --dry-run
-
-# Type check
+npm run dev -- sync --dry-run    # run from source
 npm run typecheck
-
-# Test
 npm test
-npm run test:watch
-
-# Build
 npm run build
-```
-
----
-
-## Design
-
-Built with seven design principles in order of priority:
-
-1. **Safety** — never destroy user data, never overwrite without consent
-2. **Compatibility** — relative symlinks work everywhere, on every OS, in every CI
-3. **Idempotency** — running `sync` 100 times produces the same result as running it once
-4. **Extensibility** — provider registry, not hardcoded logic
-5. **Portability** — relative paths only, cross-platform from day one
-6. **Developer Experience** — clear errors, helpful guidance, progressive disclosure
-7. **Enterprise Ready** — typed, tested, documented, modular
-
-### Architecture
-
-```
-src/
-├── providers.ts       Provider registry (add new tools here)
-├── config.ts          Config discovery, loading, validation
-├── symlink.ts         Symlink state machine (MISSING/OK/WRONG/...)
-├── backup.ts          Safe file backup with timestamp fallback
-├── scanner.ts         Git repo walker with worktree support
-├── doctor.ts          Environment diagnostics
-├── logger.ts          Structured output with quiet/verbose modes
-├── commands/          One module per CLI command
-└── utils/             Cross-platform path + fs utilities
 ```
 
 ---
