@@ -18,7 +18,7 @@ function showMascot() {
   const v = pc.dim(`v${pkg.version}`)
   console.log('')
   console.log(pc.cyan('  ┌───────┐'))
-  console.log(pc.cyan('  │ ◉   ◉│') + `  agents-ln ${v}`)
+  console.log(pc.cyan('  │ ◉   ◉ │') + `  agents-ln ${v}`)
   console.log(pc.cyan('  ├───────┤'))
   console.log(pc.cyan('  │  ─▲─  │') + '  ' + pc.dim('One instruction file. Every AI agent.'))
   console.log(pc.cyan('  └─┬───┬─┘'))
