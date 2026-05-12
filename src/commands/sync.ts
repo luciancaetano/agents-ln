@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { logger } from '../logger.js'
 import { loadOrCreateConfig, resolveConfigPaths } from '../config.js'
-import { fixLink, summarizeResults, reportSummary } from '../symlink.js'
+import { fixLink, createLink, summarizeResults, reportSummary } from '../symlink.js'
 import { exists, isSymlink } from '../utils/fs.js'
 import { getConfigDirsForFilenames } from '../providers.js'
 import type { CliOptions, ProjectConfig } from '../types.js'
@@ -46,12 +46,21 @@ export async function runSync(opts: CliOptions = {}): Promise<void> {
     for (const dir of configDirs) {
       const linkPath = path.resolve(projectConfig.configDir, dir)
 
-      // Skip real directories — replacing them is destructive and almost certainly wrong
+      // Migrate existing real directories into _agents, then symlink
       try {
         const st = await fs.lstat(linkPath)
         if (st.isDirectory()) {
-          logger.warning(`skip ${dir} — real directory exists (remove it manually to enable directory linking)`)
-          results.push({ linkPath, status: 'NOT_SYMLINK', action: 'skip' })
+          if (opts.dryRun) {
+            logger.info(`[dry-run] Would migrate ${dir}/ → _agents/ and create symlink`)
+            results.push({ linkPath, status: 'NOT_SYMLINK' as const, action: 'replace' as const })
+          } else {
+            logger.info(`Migrating ${dir}/ → _agents/`)
+            await migrateDir(linkPath, dirSource)
+            await fs.rm(linkPath, { recursive: true, force: true })
+            await createLink(linkPath, dirSource)
+            logger.action('replace', linkPath)
+            results.push({ linkPath, status: 'NOT_SYMLINK' as const, action: 'replace' as const })
+          }
           continue
         }
       } catch {
@@ -88,6 +97,30 @@ export async function runSync(opts: CliOptions = {}): Promise<void> {
 
   if (summary.errors > 0) {
     process.exit(1)
+  }
+}
+
+async function migrateDir(src: string, dest: string): Promise<void> {
+  const entries = await fs.readdir(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name)
+    const destPath = path.join(dest, entry.name)
+    if (entry.isDirectory()) {
+      await fs.mkdir(destPath, { recursive: true })
+      await migrateDir(srcPath, destPath)
+    } else {
+      // Don't overwrite files/symlinks already in _agents
+      try {
+        await fs.lstat(destPath)
+      } catch {
+        if (entry.isSymbolicLink()) {
+          const target = await fs.readlink(srcPath)
+          await fs.symlink(target, destPath)
+        } else {
+          await fs.copyFile(srcPath, destPath)
+        }
+      }
+    }
   }
 }
 
